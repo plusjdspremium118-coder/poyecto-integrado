@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restaurant Siglo XXI — Prototipo Interactivo Multi-dispositivo v1.2</title>
+  <style>
+    :root {
+      --brand-red: #A61C1C;
+      --brand-red-dark: #821414;
+      --brand-navy: #1B365D;
+      --brand-navy-light: #264B82;
+      --bg-ivory: #FAF8F5;
+      --bg-card: #FFFFFF;
+      --kds-dark: #0F172A;
+      --kds-card: #1E293B;
+      --status-green: #15803D;
+      --status-green-bg: #DCFCE7;
+      --status-amber: #D97706;
+      --status-amber-bg: #FEF3C7;
+      --status-red: #DC2626;
+      --status-red-bg: #FEE2E2;
+      --text-main: #1E293B;
+      --text-muted: #64748B;
+      --border-light: #E2E8F0;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.10);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-ivory);
+      color: var(--text-main);
+      line-height: 1.45;
+      overflow-x: hidden;
+    }
+
+    .tabular {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* TOP SIMULATOR BAR */
+    .sim-navbar {
+      background: var(--brand-navy);
+      color: #FFFFFF;
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .sim-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sim-badge {
+      background: var(--brand-red);
+      color: #fff;
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      letter-spacing: 0.4px;
+    }
+
+    .sim-title h1 {
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .sim-title span {
+      font-size: 12px;
+      color: #CBD5E1;
+    }
+
+    .device-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .device-tab {
+      min-height: 48px;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.08);
+      color: #F8FAFC;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.18s ease;
+    }
+
+    .device-tab:hover {
+      background: rgba(255,255,255,0.18);
+    }
+
+    .device-tab.active {
+      background: #FFFFFF;
+      color: var(--brand-navy);
+      border-color: #FFFFFF;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .tab-pill {
+      background: var(--brand-red);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    /* LIVE EVENT TICKER */
+    .ws-bar {
+      background: #0F172A;
+      color: #E2E8F0;
+      padding: 8px 20px;
+      font-size: 12.5px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .ws-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #4ADE80;
+    }
+
+    .ws-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 8px #22C55E;
+    }
+
+    .ws-log {
+      color: #94A3B8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    /* MAIN CONTAINER */
+    .main-stage {
+      max-width: 1360px;
+      margin: 20px auto;
+      padding: 0 16px 40px;
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* DEVICE FRAME HEADER */
+    .device-frame {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-md);
+      overflow: hidden;
+    }
+
+    .frame-header {
+      background: #F1F5F9;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .frame-header-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--brand-navy);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .rf-tag {
+      background: var(--brand-navy);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .rf-tag.red {
+      background: var(--brand-red);
+    }
+
+    .rf-tag.green {
+      background: var(--status-green);
+    }
+
+    /* BUTTONS (WCAG AA >= 48x48px) */
+    .btn {
+      min-height: 48px;
+      min-width: 48px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: transform 0.1s ease, background 0.15s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--brand-red);
+      color: #FFFFFF;
+    }
+    .btn-primary:hover { background: var(--brand-red-dark); }
+
+    .btn-navy {
+      background: var(--brand-navy);
+      color: #FFFFFF;
+    }
+    .btn-navy:hover { background: var(--brand-navy-light); }
+
+    .btn-green {
+      background: var(--status-green);
+      color: #FFFFFF;
+    }
+    .btn-green:hover { background: #166534; }
+
+    .btn-outline {
+      background: #FFFFFF;
+      color: var(--brand-navy);
+      border: 2px solid var(--brand-navy);
+    }
+    .btn-outline:hover { background: #F1F5F9; }
+
+    .btn-sm {
+      min-height: 40px;
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    /* VIEW 1: TOTEM 22" & RESERVAS */
+    .totem-body {
+      padding: 28px;
+      background: var(--bg-ivory);
+    }
+
+    .totem-top-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .lang-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .lang-btn {
+      min-height: 48px;
+      min-width: 54px;
+      border-radius: 10px;
+      border: 2px solid var(--border-light);
+      background: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      border-color: var(--brand-navy);
+      background: var(--brand-navy);
+      color: #fff;
+    }
+
+    .totem-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .totem-grid { grid-template-columns: 1fr; }
+    }
+
+    .kiosk-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .kiosk-welcome {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .kiosk-welcome h2 {
+      font-size: 26px;
+      color: var(--brand-navy);
+      margin-bottom: 6px;
+    }
+
+    .kiosk-welcome p {
+      font-size: 16px;
+      color: var(--text-muted);
+    }
+
+    .stepper-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      background: var(--bg-ivory);
+      border: 2px solid var(--border-light);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 24px;
+    }
+
+    .stepper-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      border: 2px solid var(--brand-navy);
+      background: #fff;
+      color: var(--brand-navy);
+      font-size: 26px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .stepper-val {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text-main);
+      min-width: 170px;
+      text-align: center;
+    }
+
+    .ux01-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .ux01-split { grid-template-columns: 1fr; }
+    }
+
+    .ux01-btn {
+      min-height: 76px;
+      font-size: 16px;
+      flex-direction: column;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .ux01-btn small {
+      font-weight: 500;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .ticket-banner {
+      background: var(--status-green-bg);
+      border: 2px solid var(--status-green);
+      color: #14532D;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      display: none;
+    }
+
+    .ticket-banner.show {
+      display: block;
+    }
+
+    .ticket-banner.waitlist {
+      background: var(--status-amber-bg);
+      border-color: var(--status-amber);
+      color: #78350F;
+    }
+
+    .tables-map {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .table-tile {
+      padding: 12px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .table-tile.libre { border-left: 5px solid var(--status-green); }
+    .table-tile.ocupada { border-left: 5px solid var(--brand-red); background: #FFF5F5; }
+    .table-tile.reservada { border-left: 5px solid var(--status-amber); background: #FFFBEB; }
+
+    /* VIEW 2: TABLET MESA 10" */
+    .tablet-layout {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 20px;
+      padding: 20px;
+      background: var(--bg-ivory);
+    }
+
+    @media (max-width: 960px) {
+      .tablet-layout { grid-template-columns: 1fr; }
+    }
+
+    .cat-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .cat-btn {
+      min-height: 48px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border-light);
+      background: #fff;
+      font-weight: 700;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .cat-btn.active {
+      background: var(--brand-red);
+      color: #fff;
+      border-color: var(--brand-red);
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .menu-grid { grid-template-columns: 1fr; }
+    }
+
+    .dish-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .dish-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .dish-title {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--brand-navy);
+    }
+
+    .dish-price {
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--brand-red);
+      white-space: nowrap;
+    }
+
+    .dish-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .dish-meta {
+      font-size: 12px;
+      color: var(--status-green);
+      font-weight: 600;
+    }
+
+    .note-input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #CBD5E1;
+      font-size: 13px;
+    }
+
+    .order-drawer {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .order-item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px dashed #E2E8F0;
+      font-size: 14px;
+    }
+
+    .extra-badge {
+      background: var(--status-amber-bg);
+      color: #92400E;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    .sent-badge {
+      background: #E0F2FE;
+      color: #075985;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    /* VIEW 3: KDS DARK MODE 27" + GARZON PWA */
+    .kds-garzon-grid {
+      display: grid;
+      grid-template-columns: 2.1fr 1fr;
+      gap: 0;
+    }
+
+    @media (max-width: 980px) {
+      .kds-garzon-grid { grid-template-columns: 1fr; }
+    }
+
+    .kds-panel {
+      background: var(--kds-dark);
+      color: #F8FAFC;
+      padding: 22px;
+    }
+
+    .kds-topbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 18px;
+    }
+
+    .batch-banner {
+      background: rgba(217, 119, 6, 0.18);
+      border: 1px solid #F59E0B;
+      color: #FDE68A;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .kds-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .kds-ticket {
+      background: var(--kds-card);
+      border-radius: 12px;
+      padding: 16px;
+      border: 2.5px solid #22C55E;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .kds-ticket.amber { border-color: #F59E0B; }
+    .kds-ticket.red { border-color: #EF4444; }
+
+    .kds-ticket-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 800;
+      font-size: 18px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #334155;
+    }
+
+    .kds-sla {
+      font-size: 13px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.1);
+    }
+
+    .kds-dish-line {
+      font-size: 16px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .kds-note {
+      display: block;
+      font-size: 13px;
+      color: #FCA5A5;
+      margin-top: 2px;
+    }
+
+    .btn-kds-ready {
+      min-height: 64px;
+      width: 100%;
+      background: #15803D;
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 800;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .btn-kds-ready:hover { background: #166534; }
+
+    /* GARZON MOBILE SIDEBAR */
+    .garzon-panel {
+      background: #F8FAFC;
+      border-left: 2px solid var(--border-light);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .garzon-header {
+      background: var(--brand-navy);
+      color: #fff;
+      padding: 14px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .garzon-counter {
+      background: var(--brand-red);
+      color: #fff;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .alert-card {
+      background: #FFF;
+      border-left: 5px solid var(--status-green);
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: var(--shadow-sm);
+      font-size: 13.5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .alert-card.call {
+      border-left-color: var(--status-amber);
+      background: #FFFBEB;
+    }
+
+    /* VIEW 4: DESKTOP JAVAFX 21 */
+    .desktop-shell {
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      min-height: 560px;
+    }
+
+    @media (max-width: 820px) {
+      .desktop-shell { grid-template-columns: 1fr; }
+    }
+
+    .fx-sidebar {
+      background: var(--brand-navy);
+      color: #fff;
+      padding: 20px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .fx-nav-btn {
+      min-height: 48px;
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: #E2E8F0;
+      font-weight: 600;
+      font-size: 13.5px;
+      cursor: pointer;
+    }
+
+    .fx-nav-btn.active, .fx-nav-btn:hover {
+      background: rgba(255,255,255,0.16);
+      color: #FFFFFF;
+    }
+
+    .fx-main {
+      padding: 22px;
+      background: #F8FAFC;
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 640px) {
+      .kpi-row { grid-template-columns: 1fr; }
+    }
+
+    .kpi-card {
+      background: #fff;
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 16px;
+      border-top: 4px solid var(--brand-navy);
+    }
+
+    .kpi-card.green { border-top-color: var(--status-green); }
+    .kpi-card.amber { border-top-color: var(--status-amber); }
+    .kpi-card.red { border-top-color: var(--status-red); }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .kpi-val {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .fx-subview { display: none; }
+    .fx-subview.active { display: block; }
+
+    .ux05-cols {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 16px 0;
+    }
+
+    @media (max-width: 720px) {
+      .ux05-cols { grid-template-columns: 1fr; }
+    }
+
+    .ux05-box {
+      background: #fff;
+      border: 1.5px solid var(--border-light);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      font-size: 13px;
+      border: 1px solid var(--border-light);
+    }
+
+    table.data-table th {
+      background: #E2E8F0;
+      color: #0F172A;
+      text-align: left;
+      padding: 10px 12px;
+      font-weight: 700;
+    }
+
+    table.data-table td {
+      padding: 10px 12px;
+      border-top: 1px solid var(--border-light);
+    }
+
+    pre.json-box {
+      background: #0F172A;
+      color: #38BDF8;
+      padding: 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      overflow-x: auto;
+      max-height: 320px;
+    }
+
+    /* MODAL WEBPAY & BOLETA SII */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 480px;
+      width: 100%;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.28);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVIGATION SWITCHER -->
+  <header class="sim-navbar">
+    <div class="sim-brand">
+      <div class="sim-badge">SIGLO XXI</div>
+      <div class="sim-title">
+        <h1>Prototipo Interactivo Multi-dispositivo v1.2</h1>
+        <span>INACAP TIHV43 — Arquitectura 4+1 | UX/UI WCAG 2.1 AA | Persistencia Híbrida Oracle 3FN/JSON</span>
+      </div>
+    </div>
+
+    <nav class="device-tabs" aria-label="Selector de dispositivos del restaurante">
+      <button class="device-tab active" onclick="switchView('totem', this)">
+        1. Tótem Recepción 22" / Reservas
+      </button>
+      <button class="device-tab" onclick="switchView('tablet', this)">
+        2. Tablet Mesa 10" & Webpay <span class="tab-pill" id="badge-mesa">Mesa #08</span>
+      </button>
+      <button class="device-tab" onclick="switchView('kds', this)">
+        3. Cocina KDS 27" & App Garzón <span class="tab-pill" id="badge-kds">2</span>
+      </button>
+      <button class="device-tab" onclick="switchView('desktop', this)">
+        4. Escritorio JavaFX 21 (Caja/Bodega)
+      </button>
+    </nav>
+  </header>
+
+  <!-- REAL-TIME WEBSOCKET / STOMP TELEMETRY BAR -->
+  <div class="ws-bar">
+    <div class="ws-status">
+      <span class="ws-dot"></span>
+      <span>WSS STOMP (/topic/kds/comandas) + Oracle XE 21c (ACID / IS JSON) Activos</span>
+    </div>
+    <div class="ws-log" id="ws-live-log">
+      [STOMP] Esperando interacción operativa en salón, cocina o caja...
+    </div>
+  </div>
+
+  <main class="main-stage">
+
+    <!-- ========================================================= -->
+    <!-- VISTA 1: TÓTEM DE RECEPCIÓN 22" & PORTAL RESERVAS WEB     -->
+    <!-- ========================================================= -->
+    <section id="view-totem" class="view-section active">
+      <div class="device-frame">
+        <div class="frame-header">
+          <div class="frame-header-title">
+            <span class="rf-tag">RF-01 / RF-10</span>
+            <span>Tótem de Recepción 22" (Kiosk 1080p) y Portal de Reservas Web</span>
+          </div>
+          <span class="rf-tag green">Mejora UX-01 Aplicada (14 s promedio)</span>
+        </div>
+
+        <div class="totem-body">
+          <div class="totem-top-controls">
+            <div>
+              <strong style="color:var(--brand-navy);">Idioma / Language (i18n Turismo):</strong>
+            </div>
+            <div class="lang-group">
+              <button class="lang-btn active" onclick="setLang('es', this)">ES</button>
+              <button class="lang-btn" onclick="setLang('en', this)">EN</button>
+              <button class="lang-btn" onclick="setLang('pt', this)">PT</button>
+            </div>
+          </div>
+
+          <div class="totem-grid">
+            <!-- Left: Kiosk Interaction -->
+            <div class="kiosk-card">
+              <div class="kiosk-welcome">
+                <h2 id="t-welcome">Bienvenido a Restaurant Siglo XXI</h2>
+                <p id="t-sub">Seleccione cantidad de comensales o valide su reserva web</p>
+              </div>
+
+              <div class="stepper-box">
+                <button class="stepper-btn" onclick="changeGuests(-1)" aria-label="Disminuir comensales">−</button>
+                <div class="stepper-val tabular" id="guest-display">4 Comensales</div>
+                <button class="stepper-btn" onclick="changeGuests(1)" aria-label="Aumentar comensales">+</button>
+              </div>
+
+              <!-- UX-01 Split High-Contrast Buttons -->
+              <div class="ux01-split">
+                <button class="btn btn-primary ux01-btn" onclick="assignTableNow()">
+                  <span id="btn-assign-txt">ASIGNAR MESA AHORA</span>
+                  <small>Bloqueo pesimista SELECT FOR UPDATE</small>
+                </button>
+                <button class="btn btn-navy ux01-btn" onclick="toggleReservationBox()">
+                  <span id="btn-res-txt">TENGO RESERVA (QR)</span>
+                  <small>Validación código QR / Agendar web</small>
+                </button>
+              </div>
+
+              <!-- Optional QR / Reservation Form -->
+              <div id="reservation-box" style="display:none; background:#F8FAFC; border:1px solid #CBD5E1; border-radius:12px; padding:16px; margin-bottom:16px;">
+                <h4 style="color:var(--brand-navy); margin-bottom:8px;">Check-in Reserva QR o Nueva Reserva Web (RF-10)</h4>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <input type="text" id="qr-input" class="note-input" style="flex:1;" value="RES-SXXI-2026-08" placeholder="Ingrese código QR (ej. RES-SXXI-2026-08)" />
+                  <button class="btn btn-navy btn-sm" onclick="validateQrReservation()">Validar QR</button>
+                </div>
+                <p style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+                  Contacto protegido bajo Ley N° 21.719 con cifrado AES-256-GCM en tabla RESERVA.
+                </p>
+              </div>
+
+              <!-- Assigned Table Ticket Output -->
+              <div id="totem-ticket" class="ticket-banner">
+                <div style="font-size:18px; font-weight:800;" id="ticket-title">✓ MESA #08 ASIGNADA (Capacidad 4 pers. — Salón Principal)</div>
+                <p style="font-size:13.5px; margin:6px 0 12px;" id="ticket-sub">
+                  Ticket impreso automáticamente | Token efímero MESA_SESSION_TOKEN emitido (Anti-IDOR).
+                </p>
+                <button class="btn btn-green btn-sm" onclick="goToAssignedTablet()">
+                  Abrir Carta Digital en Tablet de esta Mesa →
+                </button>
+              </div>
+            </div>
+
+            <!-- Right: Live Salon Table Availability -->
+            <div class="kiosk-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <h3 style="color:var(--brand-navy); font-size:17px;">Estado en Tiempo Real del Salón (Oracle MESA)</h3>
+                <button class="btn btn-outline btn-sm" onclick="resetTablesDemo()">Liberar Mesas Demo</button>
+              </div>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Sincronizado con tabla <code>MESA</code> y <code>LISTA_ESPERA</code>. Si el salón llega al 100%, el tótem deriva automáticamente a cola virtual.
+              </p>
+              <div class="tables-map" id="salon-tables-map"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VISTA 2: TABLET EN MESA 10" — CARTA DIGITAL Y WEBPAY PLUS  -->
+    <!-- ========================================================= -->
+    <section id="view-tablet" class="view-section">
+      <div class="device-frame">
+        <div class="frame-header">
+          <div class="frame-header-title">
+            <span class="rf-tag red">RF-02 / RF-07</span>
+            <span>Carta Digital y Pago en Mesa 10" — <strong id="active-mesa-label">Mesa #08</strong></span>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span class="rf-tag green" id="cache-indicator">PWA Caché Offline Lista</span>
+            <button class="btn btn-outline btn-sm" onclick="callWaiter()">Llamar al Garzón</button>
+          </div>
+        </div>
+
+        <div class="tablet-layout">
+          <!-- Left: Interactive Menu -->
+          <div>
+            <div class="cat-tabs" id="menu-cat-tabs">
+              <button class="cat-btn active" onclick="filterCategory('Todos', this)">Todos</button>
+              <button class="cat-btn" onclick="filterCategory('Entradas', this)">Entradas</button>
+              <button class="cat-btn" onclick="filterCategory('Fondos', this)">Fondos</button>
+              <button class="cat-btn" onclick="filterCategory('Postres', this)">Postres</button>
+              <button class="cat-btn" onclick="filterCategory('Bebestibles', this)">Bebestibles</button>
+            </div>
+
+            <div class="menu-grid" id="menu-dishes-grid"></div>
+          </div>
+
+          <!-- Right: Order Drawer + UX-02 + Webpay -->
+          <aside class="order-drawer">
+            <div>
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid var(--brand-navy); padding-bottom:10px; margin-bottom:12px;">
+                <h3 style="color:var(--brand-navy); font-size:18px;" id="drawer-mesa-title">Mi Pedido — Mesa #08</h3>
+                <span class="rf-tag" id="order-status-pill">ABIERTO</span>
+              </div>
+
+              <div id="order-items-list" style="max-height:280px; overflow-y:auto;"></div>
+            </div>
+
+            <div style="border-top:2px solid var(--border-light); padding-top:12px;">
+              <div style="display:flex; justify-content:space-between; font-size:14px; margin-bottom:6px;">
+                <span>Subtotal Consumo:</span>
+                <strong class="tabular" id="bill-subtotal">$0</strong>
+              </div>
+              <label style="display:flex; justify-content:space-between; align-items:center; font-size:13.5px; color:var(--text-muted); margin-bottom:8px; cursor:pointer;">
+                <span><input type="checkbox" id="tip-checkbox" checked onchange="renderOrderDrawer()" /> Propina sugerida (10%):</span>
+                <span class="tabular" id="bill-tip">$0</span>
+              </label>
+              <div style="display:flex; justify-content:space-between; font-size:20px; font-weight:800; color:var(--brand-navy); margin-bottom:14px;">
+                <span>Total a Pagar:</span>
+                <span class="tabular" id="bill-total">$0</span>
+              </div>
+
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn btn-green" id="btn-send-kitchen" onclick="sendOrderToKitchen()">
+                  ENVIAR COMANDA A COCINA (KDS)
+                </button>
+                <button class="btn btn-primary" onclick="openWebpayModal()">
+                  SOLICITAR CUENTA Y PAGAR WEBPAY PLUS
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VISTA 3: TABLERO KDS COCINA 27" + APP MÓVIL GARZÓN        -->
+    <!-- ========================================================= -->
+    <section id="view-kds" class="view-section">
+      <div class="device-frame">
+        <div class="frame-header">
+          <div class="frame-header-title">
+            <span class="rf-tag red">RF-03 / RF-04 / RF-05</span>
+            <span>Tablero Digital KDS Cocina 27" (Modo Oscuro UX-03) + PWA Móvil Garzón (UX-04)</span>
+          </div>
+          <span class="rf-tag">Rebaja Atómica PL/SQL SP_DESCONTAR_BOM</span>
+        </div>
+
+        <div class="kds-garzon-grid">
+          <!-- KDS 27" Dark Panel -->
+          <div class="kds-panel">
+            <div class="kds-topbar">
+              <div>
+                <h2 style="font-size:20px; color:#FFFFFF;">COLA PRIORIZADA EN VIVO — COCINA SIGLO XXI</h2>
+                <span style="font-size:13px; color:#94A3B8;">Contraste WCAG AAA (#0F172A) • Lectura ergonómica a 1,5 m • Semáforo SLA</span>
+              </div>
+              <div style="background:#1E293B; padding:8px 14px; border-radius:8px; border:1px solid #334155; font-weight:700;" class="tabular" id="kds-clock">
+                Turno Activo: 14:03:00
+              </div>
+            </div>
+
+            <div class="batch-banner" id="kds-batch-banner">
+              <span><strong>Algoritmo de Agrupación Homogénea (RF-03):</strong> Consolidando platos idénticos para optimizar tiempos de horno y plancha.</span>
+              <span class="tabular" id="kds-batch-tag" style="background:#D97706; color:#fff; padding:3px 8px; border-radius:6px; font-weight:700;">LOTE-CHOCLO ACTIVO</span>
+            </div>
+
+            <div class="kds-cards" id="kds-tickets-grid"></div>
+          </div>
+
+          <!-- Waiter Mobile PWA Panel (UX-04) -->
+          <aside class="garzon-panel">
+            <div class="garzon-header">
+              <div>
+                <strong style="font-size:15px;">PWA Móvil Garzón</strong>
+                <div style="font-size:12px; color:#CBD5E1;">Notificaciones Push STOMP (UX-04)</div>
+              </div>
+              <span class="garzon-counter tabular" id="garzon-pending-count">0 Listos</span>
+            </div>
+
+            <p style="font-size:12.5px; color:var(--text-muted);">
+              Al presionar <strong>[✓ MARCAR PLATO LISTO]</strong> en cocina, el garzón recibe alerta instantánea con número de mesa y se rebaja el inventario por receta.
+            </p>
+
+            <div id="garzon-alerts-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- VISTA 4: ESCRITORIO JAVAFX 21 — CAJA, BODEGA Y AUDITORÍA  -->
+    <!-- ========================================================= -->
+    <section id="view-desktop" class="view-section">
+      <div class="device-frame">
+        <div class="frame-header">
+          <div class="frame-header-title">
+            <span class="rf-tag">RNF-05 / RNF-08 / RF-06 / RF-09 / RF-12</span>
+            <span>Aplicación Satélite Escritorio Windows 11 — JavaFX 21 (sigloxxi-desktop.jar)</span>
+          </div>
+          <span class="rf-tag green">Sesión JWT RS256: Admin / Finanzas (TTL 15 min)</span>
+        </div>
+
+        <div class="desktop-shell">
+          <aside class="fx-sidebar">
+            <div style="padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.15); margin-bottom:6px;">
+              <div style="font-size:11px; color:#93C5FD; text-transform:uppercase;">Menú RBAC</div>
+              <div style="font-weight:700; font-size:14px;">Módulos Administrativos</div>
+            </div>
+            <button class="fx-nav-btn active" onclick="switchFxTab('caja', this)">1. Cuadratura Caja & PDF (RF-09)</button>
+            <button class="fx-nav-btn" onclick="switchFxTab('bodega', this)">2. Bodega & Stock BOM (RF-05/06)</button>
+            <button class="fx-nav-btn" onclick="switchFxTab('auditoria', this)">3. Auditoría & Telemetría JSON</button>
+          </aside>
+
+          <div class="fx-main">
+            <!-- Top KPI Cards -->
+            <div class="kpi-row">
+              <div class="kpi-card green">
+                <div class="kpi-label">Ventas Acumuladas Turno</div>
+                <div class="kpi-val tabular" id="kpi-ventas">$1.485.000</div>
+              </div>
+              <div class="kpi-card amber">
+                <div class="kpi-label">Insumos Bajo Stock Mínimo</div>
+                <div class="kpi-val tabular" id="kpi-stock-crit">1 Insumo</div>
+              </div>
+              <div class="kpi-card" id="kpi-descuadre-card">
+                <div class="kpi-label">Estado Cuadratura Caja</div>
+                <div class="kpi-val tabular" id="kpi-descuadre">$0 (CUADRADO)</div>
+              </div>
+            </div>
+
+            <!-- FX Subview 1: Cuadratura Caja UX-05 & PDF -->
+            <div id="fx-caja" class="fx-subview active">
+              <h3 style="color:var(--brand-navy); margin-bottom:6px;">Cuadratura Diaria de Caja y Reportería Gerencial (UX-05 / RF-09 / RF-12)</h3>
+              <p style="font-size:13px; color:var(--text-muted);">
+                Contraste automático en 3 columnas entre ventas teóricas Oracle, pagos conciliados Webpay Plus y arqueo físico de efectivo declarado por el cajero.
+              </p>
+
+              <div class="ux05-cols">
+                <div class="ux05-box">
+                  <div class="kpi-label">1. Teórico Oracle (Total Ventas)</div>
+                  <div class="kpi-val tabular" id="caja-teorico">$1.485.000</div>
+                  <small style="color:var(--text-muted);">Boletas electrónicas SII emitidas: <strong id="caja-boletas">42</strong></small>
+                </div>
+                <div class="ux05-box">
+                  <div class="kpi-label">2. Webpay Plus Conciliado</div>
+                  <div class="kpi-val tabular" id="caja-webpay">$1.120.000</div>
+                  <small style="color:var(--status-green);">Transacciones aprobadas Transbank</small>
+                </div>
+                <div class="ux05-box">
+                  <div class="kpi-label">3. Efectivo Arqueado Declarado</div>
+                  <input type="number" id="efectivo-declarado-input" class="note-input tabular" style="font-size:18px; font-weight:800; margin-top:6px;" value="365000" oninput="recalcCaja()" />
+                  <small style="color:var(--text-muted);">Efectivo esperado: <strong class="tabular" id="caja-efectivo-esp">$365.000</strong></small>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                <button class="btn btn-primary" onclick="exportPdfSimulation()">
+                  EXPORTAR INFORME GERENCIAL PDF (OpenPDF — RF-12)
+                </button>
+                <span id="pdf-feedback" style="font-size:13px; font-weight:700; color:var(--status-green);"></span>
+              </div>
+            </div>
+
+            <!-- FX Subview 2: Bodega e Inventario BOM -->
+            <div id="fx-bodega" class="fx-subview">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+                <div>
+                  <h3 style="color:var(--brand-navy);">Control de Inventario por Receta BOM (RF-05 y RF-06)</h3>
+                  <p style="font-size:13px; color:var(--text-muted);">Cada plato marcado listo en KDS ejecuta <code>PKG_INVENTARIO.SP_DESCONTAR_BOM</code> y genera O.C. sugerida bajo umbral.</p>
+                </div>
+              </div>
+
+              <table class="data-table" id="bodega-table">
+                <thead>
+                  <tr>
+                    <th>SKU</th>
+                    <th>Insumo</th>
+                    <th>Stock Actual</th>
+                    <th>Stock Mínimo</th>
+                    <th>Estado</th>
+                    <th>Orden Compra Sugerida (RF-06)</th>
+                  </tr>
+                </thead>
+                <tbody id="bodega-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- FX Subview 3: Auditoría JSON & Telemetría KDS -->
+            <div id="fx-auditoria" class="fx-subview">
+              <h3 style="color:var(--brand-navy); margin-bottom:6px;">Persistencia Híbrida Oracle XE 21c — Colecciones <code>IS JSON</code></h3>
+              <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+                Documentos inmutables registrados en tiempo real en <code>AUDITORIA_EVENTOS_JSON</code> y <code>TELEMETRIA_KDS_JSON</code>.
+              </p>
+              <pre class="json-box" id="json-live-viewer"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- WEBPAY PLUS & BOLETA SII MODAL -->
+  <div class="modal-backdrop" id="webpay-modal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="color:var(--brand-navy);">Pasarela Webpay Plus & Boleta SII</h3>
+        <span class="rf-tag">TLS 1.3</span>
+      </div>
+      <div id="webpay-step-1">
+        <p style="font-size:14px; color:var(--text-muted); margin-bottom:14px;">
+          Transacción segura en ambiente de integración Transbank. El sistema no almacena datos de tarjeta (PCI-DSS).
+        </p>
+        <div style="background:var(--bg-ivory); padding:14px; border-radius:10px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+            <span>Mesa Origen:</span>
+            <strong id="wp-mesa">Mesa #08</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:18px; color:var(--brand-red);">
+            <span>Monto Total a Autorizar:</span>
+            <strong class="tabular" id="wp-monto">$0</strong>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="btn btn-outline btn-sm" onclick="closeWebpayModal()">Cancelar</button>
+          <button class="btn btn-green" onclick="confirmWebpayPayment()">Confirmar Pago Webpay</button>
+        </div>
+      </div>
+
+      <div id="webpay-step-2" style="display:none;">
+        <div style="background:var(--status-green-bg); border:1.5px solid var(--status-green); padding:16px; border-radius:12px; color:#14532D; margin-bottom:14px;">
+          <strong style="font-size:16px;">✓ Pago Aprobado & Boleta Electrónica Emitida</strong>
+          <p style="font-size:13px; margin-top:6px;" id="boleta-details"></p>
+        </div>
+        <button class="btn btn-navy" style="width:100%;" onclick="closeWebpayModal()">Finalizar y Liberar Mesa</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // STATE & DOMAIN DATA (ALIGNED 100% WITH REPORT SECTIONS 5, 6, 7 & 8)
+    // =========================================================================
+    const i18n = {
+      es: {
+        welcome: "Bienvenido a Restaurant Siglo XXI",
+        sub: "Seleccione cantidad de comensales o valide su reserva web",
+        assign: "ASIGNAR MESA AHORA",
+        res: "TENGO RESERVA (QR)",
+        guests: "Comensales"
+      },
+      en: {
+        welcome: "Welcome to Restaurant Siglo XXI",
+        sub: "Select party size or check in with your web reservation",
+        assign: "ASSIGN TABLE NOW",
+        res: "I HAVE A RESERVATION (QR)",
+        guests: "Guests"
+      },
+      pt: {
+        welcome: "Bem-vindo ao Restaurant Siglo XXI",
+        sub: "Selecione o número de pessoas ou valide sua reserva web",
+        assign: "ATRIBUIR MESA AGORA",
+        res: "TENHO RESERVA (QR)",
+        guests: "Pessoas"
+      }
+    };
+
+    let currentLang = "es";
+    let guestCount = 4;
+    let activeMesaNum = 8;
+
+    let tables = [
+      { num: 1, cap: 2, zone: "Salón Principal", status: "LIBRE" },
+      { num: 2, cap: 2, zone: "Salón Principal", status: "OCUPADA" },
+      { num: 3, cap: 4, zone: "Terraza", status: "LIBRE" },
+      { num: 4, cap: 4, zone: "Salón Principal", status: "OCUPADA" },
+      { num: 5, cap: 4, zone: "Salón Principal", status: "LIBRE" },
+      { num: 6, cap: 6, zone: "Salón Familiar", status: "RESERVADA" },
+      { num: 7, cap: 6, zone: "Salón Familiar", status: "LIBRE" },
+      { num: 8, cap: 4, zone: "Salón Principal", status: "OCUPADA" },
+      { num: 9, cap: 8, zone: "Salón Eventos", status: "LIBRE" },
+      { num: 10, cap: 2, zone: "Ventanal", status: "LIBRE" }
+    ];
+
+    const menuItems = [
+      { id: 1, sku: "FND-012", cat: "Fondos", name: "Pastel de Choclo Tradicional", price: 11900, prep: 18, desc: "Pino de vacuno picado a cuchillo, pollo, aceituna negra y albahaca fresca.", recipe: [{ insumoId: "INS-02", qty: 0.35 }, { insumoId: "INS-01", qty: 0.20 }] },
+      { id: 2, sku: "FND-015", cat: "Fondos", name: "Salmón Austral a la Plancha", price: 14500, prep: 15, desc: "Filete de salmón fresco acompañado de puré rústico al merkén ahumado.", recipe: [{ insumoId: "INS-03", qty: 0.28 }, { insumoId: "INS-05", qty: 0.30 }] },
+      { id: 3, sku: "FND-008", cat: "Fondos", name: "Cazuela de Vacuno Tradicional", price: 10800, prep: 12, desc: "Corte tapapecho, choclo, zapallo camote, papa y cilantro.", recipe: [{ insumoId: "INS-01", qty: 0.25 }, { insumoId: "INS-02", qty: 0.15 }] },
+      { id: 4, sku: "ENT-003", cat: "Entradas", name: "Empanadas de Pino al Horno (2 un.)", price: 5400, prep: 8, desc: "Masa casera dorada con pino tradicional, huevo duro y aceituna.", recipe: [{ insumoId: "INS-01", qty: 0.18 }, { insumoId: "INS-04", qty: 0.05 }] },
+      { id: 5, sku: "ENT-001", cat: "Entradas", name: "Pebre Cuchareado & Pan Amasado", price: 3200, prep: 5, desc: "Pan amasado tibio recién horneado con pebre chileno tradicional.", recipe: [{ insumoId: "INS-06", qty: 0.20 }] },
+      { id: 6, sku: "POS-002", cat: "Postres", name: "Mote con Huesillos Artesanal", price: 3800, prep: 4, desc: "Trigo mote seleccionado con duraznos deshidratados en jugo acaramelado.", recipe: [] },
+      { id: 7, sku: "POS-004", cat: "Postres", name: "Leche Asada Casera", price: 4200, prep: 5, desc: "Receta tradicional de la casa con caramelo tostado suave.", recipe: [] },
+      { id: 8, sku: "BEB-004", cat: "Bebestibles", name: "Jugo Natural Frambuesa / Chirimoya", price: 3500, prep: 3, desc: "Pulpa 100% natural recién preparada sin azúcar añadida.", recipe: [] }
+    ];
+
+    let activeCategory = "Todos";
+    let hasSentInitialOrder = true; // Mesa #08 starts with an active order to demonstrate UX-02
+
+    let mesaOrder = [
+      { uid: 101, menuId: 1, name: "Pastel de Choclo Tradicional", price: 11900, qty: 2, note: "Sin aceitunas", sent: true, extra: false },
+      { uid: 102, menuId: 8, name: "Jugo Natural Frambuesa / Chirimoya", price: 3500, qty: 1, note: "", sent: true, extra: false }
+    ];
+
+    let kdsTickets = [
+      {
+        id: "PED-1044",
+        mesa: 4,
+        minutes: 18,
+        sla: "red",
+        statusLabel: "URGENTE (SLA > 15m)",
+        items: [
+          { menuId: 3, name: "2x Cazuela de Vacuno Tradicional", note: "", extra: false },
+          { menuId: 5, name: "1x Pebre Cuchareado & Pan Amasado", note: "Sin ají", extra: false }
+        ]
+      },
+      {
+        id: "PED-1048",
+        mesa: 8,
+        minutes: 9,
+        sla: "amber",
+        statusLabel: "EN CURSO (Lote Choclo)",
+        items: [
+          { menuId: 1, name: "2x Pastel de Choclo Tradicional", note: "Sin aceitunas", extra: false },
+          { menuId: 8, name: "1x Jugo Natural Frambuesa", note: "", extra: false }
+        ]
+      }
+    ];
+
+    let garzonAlerts = [
+      { id: 1, type: "ready", text: "Mesa #02 — 1x Salmón Austral LISTO para retirar en pase cocina.", time: "Hace 30 s" }
+    ];
+
+    let inventory = [
+      { id: "INS-01", name: "Filete / Tapapecho Vacuno (kg)", stock: 2.35, min: 2.00, supplier: "Carnes del Sur Ltda.", ocCreated: false },
+      { id: "INS-02", name: "Choclo Pastelero Molido (kg)", stock: 4.80, min: 3.00, supplier: "Agrícola Maipo S.A.", ocCreated: false },
+      { id: "INS-03", name: "Salmón Austral Fresco (kg)", stock: 1.85, min: 2.00, supplier: "Pesquera Puerto Montt", ocCreated: true },
+      { id: "INS-04", name: "Aceitunas Negras Azapa (kg)", stock: 1.60, min: 1.00, supplier: "Distribuidora Norte", ocCreated: false },
+      { id: "INS-05", name: "Papa Rústica Seleccionada (kg)", stock: 12.50, min: 5.00, supplier: "Agrícola Maipo S.A.", ocCreated: false },
+      { id: "INS-06", name: "Harina Panadera (kg)", stock: 9.00, min: 4.00, supplier: "Molinos Santiago", ocCreated: false }
+    ];
+
+    let ventasTeorico = 1485000;
+    let ventasWebpay = 1120000;
+    let ventasEfectivo = 365000;
+    let boletasCount = 42;
+
+    let auditLogs = [
+      {
+        eventUuid: "8f94c2e1-4b7a-49d0-9c31-7a6e1204f9b2",
+        tabla: "TELEMETRIA_KDS_JSON",
+        pedidoId: 1048,
+        mesaNumero: 8,
+        loteAgrupadoKds: "LOTE-CHOCLO-04",
+        alertaSlaSuperada: false
+      }
+    ];
+
+    // =========================================================================
+    // NAVIGATION & LOGGING
+    // =========================================================================
+    function logWs(msg) {
+      const now = new Date().toTimeString().slice(0, 8);
+      document.getElementById("ws-live-log").textContent = `[${now} STOMP] ${msg}`;
+    }
+
+    function switchView(viewName, btnEl) {
+      document.querySelectorAll(".view-section").forEach(s => s.classList.remove("active"));
+      document.getElementById("view-" + viewName).classList.add("active");
+      document.querySelectorAll(".device-tab").forEach(b => b.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+    }
+
+    function switchFxTab(tabName, btnEl) {
+      document.querySelectorAll(".fx-subview").forEach(s => s.classList.remove("active"));
+      document.getElementById("fx-" + tabName).classList.add("active");
+      document.querySelectorAll(".fx-nav-btn").forEach(b => b.classList.remove("active"));
+      if (btnEl) btnEl.classList.add("active");
+    }
+
+    // =========================================================================
+    // VIEW 1: TOTEM 22" & RESERVAS
+    // =========================================================================
+    function setLang(lang, btn) {
+      currentLang = lang;
+      document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      document.getElementById("t-welcome").textContent = i18n[lang].welcome;
+      document.getElementById("t-sub").textContent = i18n[lang].sub;
+      document.getElementById("btn-assign-txt").textContent = i18n[lang].assign;
+      document.getElementById("btn-res-txt").textContent = i18n[lang].res;
+      document.getElementById("guest-display").textContent = `${guestCount} ${i18n[lang].guests}`;
+      logWs(`Idioma tótem cambiado a ${lang.toUpperCase()} (i18n).`);
+    }
+
+    function changeGuests(delta) {
+      guestCount = Math.min(10, Math.max(1, guestCount + delta));
+      document.getElementById("guest-display").textContent = `${guestCount} ${i18n[currentLang].guests}`;
+    }
+
+    function renderSalonTables() {
+      const container = document.getElementById("salon-tables-map");
+      container.innerHTML = tables.map(t => `
+        <div class="table-tile ${t.status.toLowerCase()}">
+          <div>
+            <strong>Mesa #${String(t.num).padStart(2, "0")}</strong> (${t.cap} pers.)
+            <div style="font-size:11.5px; color:#64748B;">${t.zone}</div>
+          </div>
+          <span class="rf-tag ${t.status === 'LIBRE' ? 'green' : (t.status === 'OCUPADA' ? 'red' : '')}">${t.status}</span>
+        </div>
+      `).join("");
+    }
+
+    function assignTableNow() {
+      const freeTable = tables.find(t => t.status === "LIBRE" && t.cap >= guestCount) || tables.find(t => t.status === "LIBRE");
+      const banner = document.getElementById("totem-ticket");
+      if (freeTable) {
+        freeTable.status = "OCUPADA";
+        activeMesaNum = freeTable.num;
+        banner.className = "ticket-banner show";
+        document.getElementById("ticket-title").textContent = `✓ MESA #${String(freeTable.num).padStart(2, "0")} ASIGNADA (Capacidad ${freeTable.cap} pers. — ${freeTable.zone})`;
+        document.getElementById("ticket-sub").textContent = `Ticket impreso automáticamente | Token efímero MESA_SESSION_TOKEN emitido para Mesa #${String(freeTable.num).padStart(2, "0")}.`;
+        renderSalonTables();
+        updateMesaBadges();
+        pushAudit("ASIGNACION_MESA_TOTEM", { mesaId: freeTable.num, comensales: guestCount, bloqueo: "FOR_UPDATE_NOWAIT" });
+        logWs(`Tótem asignó Mesa #${String(freeTable.num).padStart(2, "0")} para ${guestCount} comensales.`);
+      } else {
+        banner.className = "ticket-banner show waitlist";
+        document.getElementById("ticket-title").textContent = `⏳ SALÓN AL 100 % — INGRESADO A LISTA DE ESPERA (#1)`;
+        document.getElementById("ticket-sub").textContent = `Registro insertado en tabla LISTA_ESPERA para ${guestCount} comensales. Notificación automática al liberarse mesa.`;
+        logWs(`Salón lleno: cliente derivado a LISTA_ESPERA (${guestCount} pers.).`);
+      }
+    }
+
+    function toggleReservationBox() {
+      const box = document.getElementById("reservation-box");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    function validateQrReservation() {
+      const code = document.getElementById("qr-input").value.trim() || "RES-SXXI-2026-08";
+      const resTable = tables.find(t => t.status === "RESERVADA") || tables[5];
+      resTable.status = "OCUPADA";
+      activeMesaNum = resTable.num;
+      const banner = document.getElementById("totem-ticket");
+      banner.className = "ticket-banner show";
+      document.getElementById("ticket-title").textContent = `✓ RESERVA ${code} VALIDADA — MESA #${String(resTable.num).padStart(2, "0")}`;
+      document.getElementById("ticket-sub").textContent = `Check-in completado en 1 toque (RF-10). Carta digital activada en Mesa #${String(resTable.num).padStart(2, "0")}.`;
+      renderSalonTables();
+      updateMesaBadges();
+      pushAudit("CHECKIN_RESERVA_QR", { codigoQr: code, mesaAsignada: resTable.num });
+      logWs(`Check-in reserva QR ${code} -> Mesa #${String(resTable.num).padStart(2, "0")}.`);
+    }
+
+    function resetTablesDemo() {
+      tables.forEach((t, idx) => {
+        t.status = (idx === 1 || idx === 7) ? "OCUPADA" : (idx === 5 ? "RESERVADA" : "LIBRE");
+      });
+      renderSalonTables();
+      logWs("Estado de mesas reiniciado para demostración.");
+    }
+
+    function updateMesaBadges() {
+      const label = `Mesa #${String(activeMesaNum).padStart(2, "0")}`;
+      document.getElementById("badge-mesa").textContent = label;
+      document.getElementById("active-mesa-label").textContent = label;
+      document.getElementById("drawer-mesa-title").textContent = `Mi Pedido — ${label}`;
+    }
+
+    function goToAssignedTablet() {
+      const tabletBtn = document.querySelectorAll(".device-tab")[1];
+      switchView("tablet", tabletBtn);
+    }
+
+    // =========================================================================
+    // VIEW 2: TABLET MESA 10" — CARTA DIGITAL & WEBPAY
+    // =========================================================================
+    function filterCategory(cat, btn) {
+      activeCategory = cat;
+      document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderMenuGrid();
+    }
+
+    function formatCLP(val) {
+      return "$" + Math.round(val).toLocaleString("es-CL");
+    }
+
+    function renderMenuGrid() {
+      const grid = document.getElementById("menu-dishes-grid");
+      const filtered = activeCategory === "Todos" ? menuItems : menuItems.filter(m => m.cat === activeCategory);
+      grid.innerHTML = filtered.map(item => `
+        <article class="dish-card">
+          <div>
+            <div class="dish-header">
+              <div class="dish-title">${item.name}</div>
+              <div class="dish-price tabular">${formatCLP(item.price)}</div>
+            </div>
+            <p class="dish-desc" style="margin:6px 0;">${item.desc}</p>
+            <div class="dish-meta">Tiempo est.: ${item.prep} min • Stock OK (${item.sku})</div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
+            <input type="text" id="note-${item.id}" class="note-input" placeholder="Nota cocina (ej. Sin aceitunas, poco sal)..." />
+            <button class="btn btn-navy btn-sm" onclick="addDishToOrder(${item.id})">
+              ${hasSentInitialOrder ? "+ Agregar Adicional (EXTRA)" : "+ Agregar al Pedido"}
+            </button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function addDishToOrder(menuId) {
+      const item = menuItems.find(m => m.id === menuId);
+      const noteVal = document.getElementById(`note-${menuId}`).value.trim();
+      document.getElementById(`note-${menuId}`).value = "";
+
+      const isExtra = hasSentInitialOrder;
+      mesaOrder.push({
+        uid: Date.now() + Math.random(),
+        menuId: item.id,
+        name: item.name,
+        price: item.price,
+        qty: 1,
+        note: noteVal,
+        sent: false,
+        extra: isExtra
+      });
+
+      renderOrderDrawer();
+      logWs(`Agregado '${item.name}'${isExtra ? " [ADICIONAL EXTRA UX-02]" : ""} en Mesa #${String(activeMesaNum).padStart(2, "0")}.`);
+    }
+
+    function removeOrderItem(uid) {
+      mesaOrder = mesaOrder.filter(i => i.uid !== uid);
+      renderOrderDrawer();
+    }
+
+    function renderOrderDrawer() {
+      const list = document.getElementById("order-items-list");
+      if (mesaOrder.length === 0) {
+        list.innerHTML = `<p style="color:var(--text-muted); font-size:13.5px; padding:14px 0;">Aún no hay platos seleccionados en la mesa.</p>`;
+      } else {
+        list.innerHTML = mesaOrder.map(i => `
+          <div class="order-item-row">
+            <div>
+              <strong>${i.qty}x ${i.name}</strong>
+              ${i.extra ? '<span class="extra-badge">EXTRA</span>' : ''}
+              ${i.sent ? '<span class="sent-badge">EN COCINA</span>' : ''}
+              ${i.note ? `<div style="font-size:12px; color:#A61C1C;">Nota: ${i.note}</div>` : ''}
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="tabular" style="font-weight:700;">${formatCLP(i.price * i.qty)}</span>
+              ${!i.sent ? `<button class="btn btn-outline btn-sm" style="min-width:34px; min-height:34px; padding:2px 8px;" onclick="removeOrderItem(${i.uid})">×</button>` : ''}
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const sub = mesaOrder.reduce((acc, i) => acc + i.price * i.qty, 0);
+      const tip = document.getElementById("tip-checkbox").checked ? Math.round(sub * 0.10) : 0;
+      const total = sub + tip;
+
+      document.getElementById("bill-subtotal").textContent = formatCLP(sub);
+      document.getElementById("bill-tip").textContent = formatCLP(tip);
+      document.getElementById("bill-total").textContent = formatCLP(total);
+    }
+
+    function sendOrderToKitchen() {
+      const pendingItems = mesaOrder.filter(i => !i.sent);
+      if (pendingItems.length === 0) {
+        alert("Todos los ítems actuales ya fueron enviados a cocina. Agrega un plato o adicional para enviar.");
+        return;
+      }
+
+      pendingItems.forEach(i => i.sent = true);
+      hasSentInitialOrder = true;
+      document.getElementById("order-status-pill").textContent = "EN COCINA";
+
+      // Push or append to KDS ticket for activeMesaNum
+      let existingTicket = kdsTickets.find(t => t.mesa === activeMesaNum);
+      const mappedLines = pendingItems.map(p => ({
+        menuId: p.menuId,
+        name: `${p.qty}x ${p.name}`,
+        note: p.note,
+        extra: p.extra
+      }));
+
+      if (existingTicket) {
+        existingTicket.items.push(...mappedLines);
+      } else {
+        kdsTickets.push({
+          id: "PED-" + Math.floor(1050 + Math.random() * 40),
+          mesa: activeMesaNum,
+          minutes: 1,
+          sla: "green",
+          statusLabel: "RECIÉN INGRESADO",
+          items: mappedLines
+        });
+      }
+
+      renderOrderDrawer();
+      renderMenuGrid();
+      renderKdsAndGarzon();
+      pushAudit("COMANDA_ENVIADA_KDS", { mesaId: activeMesaNum, lineasNuevas: mappedLines.length });
+      logWs(`STOMP /topic/kds/comandas -> Nueva comanda Mesa #${String(activeMesaNum).padStart(2, "0")} (${mappedLines.length} ítems).`);
+    }
+
+    function callWaiter() {
+      garzonAlerts.unshift({
+        id: Date.now(),
+        type: "call",
+        text: `Mesa #${String(activeMesaNum).padStart(2, "0")} — Cliente solicita asistencia en salón.`,
+        time: "Ahora"
+      });
+      renderKdsAndGarzon();
+      logWs(`Alerta STOMP al garzón: Asistencia solicitada en Mesa #${String(activeMesaNum).padStart(2, "0")}.`);
+      alert(`Aviso enviado a la PWA del garzón asignado a Mesa #${String(activeMesaNum).padStart(2, "0")}.`);
+    }
+
+    // =========================================================================
+    // WEBPAY PLUS & SII ELECTRONIC RECEIPT (RF-07, RF-08, RF-09)
+    // =========================================================================
+    function openWebpayModal() {
+      const sub = mesaOrder.reduce((acc, i) => acc + i.price * i.qty, 0);
+      if (sub === 0) {
+        alert("No hay consumo registrado en la mesa para cobrar.");
+        return;
+      }
+      const tip = document.getElementById("tip-checkbox").checked ? Math.round(sub * 0.10) : 0;
+      const total = sub + tip;
+
+      document.getElementById("wp-mesa").textContent = `Mesa #${String(activeMesaNum).padStart(2, "0")}`;
+      document.getElementById("wp-monto").textContent = formatCLP(total);
+      document.getElementById("webpay-step-1").style.display = "block";
+      document.getElementById("webpay-step-2").style.display = "none";
+      document.getElementById("webpay-modal").classList.add("open");
+    }
+
+    function confirmWebpayPayment() {
+      const sub = mesaOrder.reduce((acc, i) => acc + i.price * i.qty, 0);
+      const tip = document.getElementById("tip-checkbox").checked ? Math.round(sub * 0.10) : 0;
+      const total = sub + tip;
+      const folioSii = 4890 + boletasCount + 1;
+      const trackId = "SII-TRK-" + Math.floor(100000 + Math.random() * 900000);
+
+      // Update Oracle Financial Counters
+      ventasTeorico += total;
+      ventasWebpay += total;
+      boletasCount += 1;
+
+      document.getElementById("kpi-ventas").textContent = formatCLP(ventasTeorico);
+      document.getElementById("caja-teorico").textContent = formatCLP(ventasTeorico);
+      document.getElementById("caja-webpay").textContent = formatCLP(ventasWebpay);
+      document.getElementById("caja-boletas").textContent = boletasCount;
+      recalcCaja();
+
+      document.getElementById("boleta-details").innerHTML =
+        `Folio Boleta Electrónica SII: <strong>#${folioSii}</strong><br>` +
+        `TrackID Tributario: <code>${trackId}</code><br>` +
+        `Monto Pagado Webpay Plus: <strong>${formatCLP(total)}</strong> (IVA 19% incluido).`;
+
+      document.getElementById("webpay-step-1").style.display = "none";
+      document.getElementById("webpay-step-2").style.display = "block";
+
+      // Reset table & order
+      const tbl = tables.find(t => t.num === activeMesaNum);
+      if (tbl) tbl.status = "LIBRE";
+      mesaOrder = [];
+      hasSentInitialOrder = false;
+      renderSalonTables();
+      renderOrderDrawer();
+      renderMenuGrid();
+
+      pushAudit("PAGO_WEBPAY_Y_BOLETA_SII", { mesaId: activeMesaNum, folioSii, trackId, montoTotal: total });
+      logWs(`Pago Webpay ${formatCLP(total)} aprobado -> Boleta SII #${folioSii} emitida y cuadratura actualizada.`);
+    }
+
+    function closeWebpayModal() {
+      document.getElementById("webpay-modal").classList.remove("open");
+    }
+
+    // =========================================================================
+    // VIEW 3: KDS COCINA 27" + GARZON PWA + PL/SQL SP_DESCONTAR_BOM
+    // =========================================================================
+    function renderKdsAndGarzon() {
+      document.getElementById("badge-kds").textContent = kdsTickets.length;
+
+      // Check homogeneous grouping (RF-03)
+      const chocloCount = kdsTickets.reduce((acc, t) => acc + t.items.filter(i => i.menuId === 1).length, 0);
+      document.getElementById("kds-batch-tag").textContent =
+        chocloCount > 0 ? `LOTE-CHOCLO AGRUPADO (${chocloCount} mesas)` : "COLA SINCRONIZADA SLA";
+
+      const grid = document.getElementById("kds-tickets-grid");
+      if (kdsTickets.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1; padding:32px; text-align:center; background:#1E293B; border-radius:12px; color:#94A3B8;">
+          ✓ Sin comandas pendientes en cola. Todos los platos han sido despachados al salón.
+        </div>`;
+      } else {
+        grid.innerHTML = kdsTickets.map((t, idx) => `
+          <div class="kds-ticket ${t.sla}">
+            <div>
+              <div class="kds-ticket-head">
+                <span>MESA #${String(t.mesa).padStart(2, "0")}</span>
+                <span class="kds-sla tabular">${t.statusLabel} • ${t.minutes} min</span>
+              </div>
+              <div style="margin-top:8px;">
+                ${t.items.map(it => `
+                  <div class="kds-dish-line">
+                    <strong>${it.name}</strong>
+                    ${it.extra ? '<span class="extra-badge">EXTRA</span>' : ''}
+                    ${it.note ? `<span class="kds-note">⚠ Nota: ${it.note}</span>` : ''}
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+            <button class="btn-kds-ready" onclick="markTicketReady(${idx})">
+              ✓ MARCAR PLATO LISTO
+            </button>
+          </div>
+        `).join("");
+      }
+
+      // Garzon alerts
+      const readyCount = garzonAlerts.filter(a => a.type === "ready").length;
+      document.getElementById("garzon-pending-count").textContent = `${readyCount} Listos`;
+
+      const alertsContainer = document.getElementById("garzon-alerts-list");
+      alertsContainer.innerHTML = garzonAlerts.map((a, idx) => `
+        <div class="alert-card ${a.type === 'call' ? 'call' : ''}">
+          <div>
+            <strong>${a.text}</strong>
+            <div style="font-size:11.5px; color:#64748B; margin-top:2px;">${a.time}</div>
+          </div>
+          <button class="btn btn-navy btn-sm" onclick="dismissGarzonAlert(${idx})">Entregado</button>
+        </div>
+      `).join("");
+    }
+
+    function markTicketReady(ticketIdx) {
+      const ticket = kdsTickets[ticketIdx];
+      if (!ticket) return;
+
+      // 1. Execute PL/SQL SP_DESCONTAR_BOM atomic stock deduction (RF-05 & RF-06)
+      let ocTriggered = [];
+      ticket.items.forEach(line => {
+        const menuObj = menuItems.find(m => m.id === line.menuId);
+        if (menuObj && menuObj.recipe) {
+          menuObj.recipe.forEach(ing => {
+            const invItem = inventory.find(x => x.id === ing.insumoId);
+            if (invItem) {
+              invItem.stock = Math.max(0, +(invItem.stock - ing.qty).toFixed(2));
+              if (invItem.stock <= invItem.min && !invItem.ocCreated) {
+                invItem.ocCreated = true;
+                ocTriggered.push(invItem.name);
+              }
+            }
+          });
+        }
+      });
+
+      // 2. Push notification to Garzon PWA (RF-04 / UX-04)
+      garzonAlerts.unshift({
+        id: Date.now(),
+        type: "ready",
+        text: `¡PLATO LISTO MESA #${String(ticket.mesa).padStart(2, "0")}! (${ticket.items.map(i => i.name).join(", ")})`,
+        time: "Recién notificado (78 ms)"
+      });
+
+      // 3. Remove from KDS queue
+      kdsTickets.splice(ticketIdx, 1);
+
+      renderKdsAndGarzon();
+      renderBodegaTable();
+      pushAudit("PLATO_LISTO_Y_SP_DESCONTAR_BOM", {
+        pedidoId: ticket.id,
+        mesa: ticket.mesa,
+        ordenesCompraGeneradas: ocTriggered
+      });
+      logWs(`KDS marcó listo ${ticket.id} (Mesa #${String(ticket.mesa).padStart(2, "0")}) -> Push Garzón + SP_DESCONTAR_BOM ejecutado.`);
+    }
+
+    function dismissGarzonAlert(idx) {
+      garzonAlerts.splice(idx, 1);
+      renderKdsAndGarzon();
+    }
+
+    // =========================================================================
+    // VIEW 4: DESKTOP JAVAFX 21 — CAJA, BODEGA & AUDITORÍA JSON
+    // =========================================================================
+    function recalcCaja() {
+      const declared = Number(document.getElementById("efectivo-declarado-input").value || 0);
+      const diff = declared - ventasEfectivo;
+      const kpiCard = document.getElementById("kpi-descuadre-card");
+      const kpiVal = document.getElementById("kpi-descuadre");
+
+      if (diff === 0) {
+        kpiCard.className = "kpi-card green";
+        kpiVal.textContent = "$0 (CUADRADO)";
+        kpiVal.style.color = "var(--status-green)";
+      } else {
+        kpiCard.className = "kpi-card red";
+        const sign = diff > 0 ? "+" : "-";
+        kpiVal.textContent = `${sign}${formatCLP(Math.abs(diff))} (DESCUADRE)`;
+        kpiVal.style.color = "var(--status-red)";
+        pushAudit("ALERTA_DESCUADRE_CAJA", { teoricoEfectivo: ventasEfectivo, declarado, diferencia: diff });
+      }
+    }
+
+    function exportPdfSimulation() {
+      const fb = document.getElementById("pdf-feedback");
+      fb.textContent = "✓ Informe_Gerencial_SigloXXI_Turno.pdf generado en 410 ms (OpenPDF — RNF-09).";
+      logWs("Reporte gerencial PDF exportado desde cliente escritorio JavaFX 21.");
+    }
+
+    function renderBodegaTable() {
+      const critCount = inventory.filter(i => i.stock <= i.min).length;
+      document.getElementById("kpi-stock-crit").textContent = `${critCount} ${critCount === 1 ? "Insumo" : "Insumos"}`;
+
+      const tbody = document.getElementById("bodega-tbody");
+      tbody.innerHTML = inventory.map((item, idx) => {
+        const isLow = item.stock <= item.min;
+        return `
+          <tr>
+            <td class="tabular"><strong>${item.id}</strong></td>
+            <td>${item.name}</td>
+            <td class="tabular"><strong>${item.stock.toFixed(2)}</strong></td>
+            <td class="tabular">${item.min.toFixed(2)}</td>
+            <td>
+              <span class="rf-tag ${isLow ? 'red' : 'green'}">${isLow ? 'STOCK CRÍTICO' : 'ÓPTIMO'}</span>
+            </td>
+            <td>
+              ${item.ocCreated
+                ? `<button class="btn btn-navy btn-sm" onclick="approvePurchaseOrder(${idx})">Aprobar O.C. (${item.supplier})</button>`
+                : `<span style="color:#64748B;">Sin requerimiento</span>`}
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function approvePurchaseOrder(idx) {
+      const item = inventory[idx];
+      item.stock = +(item.stock + 10.0).toFixed(2);
+      item.ocCreated = false;
+      renderBodegaTable();
+      pushAudit("APROBACION_ORDEN_COMPRA_RF06", { insumoId: item.id, proveedor: item.supplier, nuevoStock: item.stock });
+      logWs(`Orden de compra aprobada para ${item.name} -> Stock repuesto a ${item.stock.toFixed(2)}.`);
+    }
+
+    function pushAudit(action, payload) {
+      auditLogs.unshift({
+        eventUuid: crypto.randomUUID ? crypto.randomUUID() : "uuid-" + Date.now(),
+        timestamp: new Date().toISOString(),
+        tabla: "AUDITORIA_EVENTOS_JSON",
+        accion: action,
+        detalle: payload
+      });
+      document.getElementById("json-live-viewer").textContent = JSON.stringify(auditLogs.slice(0, 6), null, 2);
+    }
+
+    // Live KDS Clock
+    setInterval(() => {
+      const now = new Date().toTimeString().slice(0, 8);
+      const el = document.getElementById("kds-clock");
+      if (el) el.textContent = `Turno Activo: ${now}`;
+    }, 1000);
+
+    // Initial Render
+    renderSalonTables();
+    renderMenuGrid();
+    renderOrderDrawer();
+    renderKdsAndGarzon();
+    renderBodegaTable();
+    document.getElementById("json-live-viewer").textContent = JSON.stringify(auditLogs, null, 2);
+  </script>
+</body>
+</html>
